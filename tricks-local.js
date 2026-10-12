@@ -249,11 +249,11 @@
         setInterval(function () { placeReloadBtn(false); }, 2000);
     }
 
-    /* две оранжевые стрелки, без заливки круга */
-    var SVG_RELOAD =
-        '<svg viewBox="0 0 24 24" width="26" height="26" xmlns="http://www.w3.org/2000/svg">' +
-        '<path fill="#FF9800" d="M17.65 6.35A7.95 7.95 0 0 0 12 4V1L7 6l5 5V7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.35 1.83l1.52.87C18.7 13.72 19 12.89 19 12c0-2.21-.9-4.21-2.35-5.65zM12 17c-2.76 0-5-2.24-5-5 0-.65.13-1.26.35-1.83l-1.52-.87C5.3 10.28 5 11.11 5 12c0 3.87 3.13 7 7 7v3l5-5-5-5v3z"/>' +
-        '</svg>';
+  /* иконка перезагрузки из bylampa (currentColor) */
+  var SVG_RELOAD =
+    '<svg fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-width="0.48">' +
+    '<path d="M4,12a1,1,0,0,1-2,0A9.983,9.983,0,0,1,18.242,4.206V2.758a1,1,0,1,1,2,0v4a1,1,0,0,1-1,1h-4a1,1,0,0,1,0-2h1.743A7.986,7.986,0,0,0,4,12Zm17-1a1,1,0,0,0-1,1A7.986,7.986,0,0,1,7.015,18.242H8.757a1,1,0,1,0,0-2h-4a1,1,0,0,0-1,1v4a1,1,0,0,0,2,0V19.794A9.984,9.984,0,0,0,22,12,1,1,0,0,0,21,11Z" fill="currentColor"></path>' +
+    '</svg>';
 
     function placeReloadBtn(force) {
         var $actions = $('.head__actions').first();
