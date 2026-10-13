@@ -6,14 +6,6 @@
 
     const PLUGIN_NAME = 'Познавательные';
 
-    const CHANNELS = [
-        { id: '43', name: 'National Geographic' },
-        { id: '91', name: 'Animal Planet' },
-        { id: '64', name: 'Discovery' },
-        { id: '65', name: 'History' },
-        { id: '43|91|64|65', name: 'Все каналы' }
-    ];
-
     function init() {
         let button = $(`
             <li class="menu__item selector">
@@ -26,47 +18,67 @@
             </li>
         `);
 
-        button.on('hover:enter', openChannels);
+        button.on('hover:enter', openMain);
         $('.menu .menu__list').eq(0).append(button);
     }
 
-    function openChannels() {
-        let items = CHANNELS.map(function (ch) {
-            return {
-                title: ch.name,
-                onSelect: function () {
-                    openList(ch);
-                }
-            };
-        });
-
+    function openMain() {
         Lampa.Select.show({
             title: PLUGIN_NAME,
-            items: items,
-            onBack: function () {
-                Lampa.Controller.toggle('content');
-            }
+            items: [
+                {
+                    title: 'Все документальные',
+                    subtitle: 'Передачи и сериалы',
+                    onSelect: () => openDocs()
+                },
+                {
+                    title: 'Поиск',
+                    subtitle: 'Найти по названию (Discovery, Viasat и т.д.)',
+                    onSelect: openSearch
+                }
+            ],
+            onBack: () => Lampa.Controller.toggle('content')
         });
     }
 
-    function openList(channel) {
+    function openDocs() {
         Lampa.Activity.push({
             url: 'discover/tv',
-            title: channel.name,
+            title: 'Документальные передачи',
             component: 'category_full',
-            source: 'tmdb',
+            source: 'cub',
             page: 1,
             card_type: true,
-            networks: channel.id,
             with_genres: 99,
             sort_by: 'popularity.desc'
+        });
+    }
+
+    function openSearch() {
+        Lampa.Input.edit({
+            title: 'Поиск (Discovery, Nat Geo, Viasat Explore...)',
+            value: '',
+            free: true,
+            nosave: true
+        }, function (query) {
+            if (!query || query.length < 2) return;
+
+            Lampa.Activity.push({
+                url: 'search/tv',
+                title: 'Поиск: ' + query,
+                component: 'category_full',
+                source: 'cub',
+                page: 1,
+                query: query,
+                card_type: true
+            });
         });
     }
 
     if (window.appready) {
         init();
     } else {
-        Lampa.Listener.follow('app', function (e) {
+        Lampa.Listener.follow('app', e => {
             if (e.type === 'ready') init();
         });
     }
