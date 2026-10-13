@@ -6,18 +6,18 @@
 
     const PLUGIN_NAME = 'Познавательные';
 
-    // Сети
+    // Правильные TMDB Network ID (проверено)
     const NETWORKS = [
-        { id: '64|49',     name: 'Discovery' },
-        { id: '43|4330',   name: 'National Geographic' },
-        { id: '107',       name: 'Animal Planet' },
-        { id: '65|318',    name: 'History' },
-        { id: '3186',      name: 'Discovery Science' },
-        { id: '43|64|107|65|3186|4330|49|318', name: 'Все каналы' }
+        { id: '43',   name: 'National Geographic' },
+        { id: '91',   name: 'Animal Planet' },
+        { id: '64',   name: 'Discovery' },          // основной
+        { id: '2087', name: 'Discovery Channel' },
+        { id: '65',   name: 'History' },
+        { id: '3186', name: 'Discovery Science' },
+        { id: '43|91|64|2087|65|3186', name: 'Все каналы' }
     ];
 
     function init() {
-        // Добавляем пункт в левое меню
         let button = $(`
             <li class="menu__item selector">
                 <div class="menu__ico">
@@ -29,31 +29,17 @@
             </li>
         `);
 
-        button.on('hover:enter', function () {
-            openMain();
-        });
-
-        // Вставляем в основное меню
+        button.on('hover:enter', openMain);
         $('.menu .menu__list').eq(0).append(button);
     }
 
     function openMain() {
-        let items = [
-            {
-                title: 'Сериалы',
-                subtitle: 'Документальные передачи',
-                onSelect: () => openType('tv')
-            },
-            {
-                title: 'Фильмы',
-                subtitle: 'Документальные фильмы',
-                onSelect: () => openType('movie')
-            }
-        ];
-
         Lampa.Select.show({
             title: PLUGIN_NAME,
-            items: items,
+            items: [
+                { title: 'Сериалы / Передачи', onSelect: () => openType('tv') },
+                { title: 'Фильмы', onSelect: () => openType('movie') }
+            ],
             onBack: () => Lampa.Controller.toggle('content')
         });
     }
@@ -65,35 +51,38 @@
         }));
 
         Lampa.Select.show({
-            title: type === 'tv' ? 'Сериалы' : 'Фильмы',
+            title: type === 'tv' ? 'Сериалы / Передачи' : 'Фильмы',
             items: items,
             onBack: openMain
         });
     }
 
     function openCatalog(type, network) {
-        Lampa.Activity.push({
+        let params = {
             url: type === 'tv' ? 'discover/tv' : 'discover/movie',
-            title: network.name + (type === 'tv' ? ' · Сериалы' : ' · Фильмы'),
+            title: network.name + (type === 'tv' ? ' · Передачи' : ' · Фильмы'),
             component: 'category_full',
             source: 'tmdb',
             page: 1,
             card_type: true,
             networks: network.id,
-            with_genres: 99,                    // только документальные
-            with_original_language: 'ru|uk',    // русский + украинский
+            with_genres: 99,                 // строго Documentary
             sort_by: 'popularity.desc'
-        });
+        };
+
+        // Для сериалов дополнительно указываем тип "Documentary"
+        if (type === 'tv') {
+            params.with_type = 0;            // 0 = Documentary
+        }
+
+        Lampa.Activity.push(params);
     }
 
-    // Запуск
     if (window.appready) {
         init();
     } else {
-        Lampa.Listener.follow('app', function (e) {
-            if (e.type === 'ready') {
-                init();
-            }
+        Lampa.Listener.follow('app', e => {
+            if (e.type === 'ready') init();
         });
     }
 })();
