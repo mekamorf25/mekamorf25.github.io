@@ -18,67 +18,26 @@
             </li>
         `);
 
-        button.on('hover:enter', openMain);
-        $('.menu .menu__list').eq(0).append(button);
-    }
-
-    function openMain() {
-        Lampa.Select.show({
-            title: PLUGIN_NAME,
-            items: [
-                {
-                    title: 'Документальные передачи',
-                    subtitle: 'Все документальные сериалы',
-                    onSelect: () => openCatalog()
-                },
-                {
-                    title: 'Поиск',
-                    subtitle: 'Найти по названию',
-                    onSelect: openSearch
-                }
-            ],
-            onBack: () => Lampa.Controller.toggle('content')
-        });
-    }
-
-    function openCatalog() {
-        Lampa.Activity.push({
-            url: 'discover/tv',
-            title: 'Документальные передачи',
-            component: 'category_full',
-            source: 'cub',
-            page: 1,
-            card_type: true,
-            with_genres: 99,          // Documentary
-            sort_by: 'popularity.desc'
-        });
-    }
-
-    function openSearch() {
-        Lampa.Input.edit({
-            title: 'Поиск документальных передач',
-            value: '',
-            free: true,
-            nosave: true
-        }, function (query) {
-            if (!query || query.length < 2) return;
-
+        button.on('hover:enter', function () {
             Lampa.Activity.push({
-                url: 'search/tv',
-                title: 'Поиск: ' + query,
+                url: 'discover/tv',
+                title: 'Документальные передачи',
                 component: 'category_full',
-                source: 'cub',
+                source: 'tmdb',
                 page: 1,
-                query: query,
-                card_type: true
+                card_type: true,
+                with_genres: 99,
+                sort_by: 'popularity.desc'
             });
         });
+
+        $('.menu .menu__list').eq(0).append(button);
     }
 
     if (window.appready) {
         init();
     } else {
-        Lampa.Listener.follow('app', e => {
+        Lampa.Listener.follow('app', function (e) {
             if (e.type === 'ready') init();
         });
     }
