@@ -46,8 +46,9 @@
                     onSelect: () => openType('tv')
                 },
                 {
-                    title: 'Фильмы',
-                    onSelect: () => openType('movie')
+                    title: 'Научно-популярная фантастика',
+                    subtitle: 'От новых к старым',
+                    onSelect: openSciFi
                 }
             ],
             onBack: () => Lampa.Controller.toggle('content')
@@ -85,6 +86,19 @@
         }
 
         Lampa.Activity.push(params);
+    }
+
+    function openSciFi() {
+        Lampa.Activity.push({
+            url: 'discover/movie',
+            title: 'Научно-популярная фантастика',
+            component: 'category_full',
+            source: 'tmdb',
+            page: 1,
+            card_type: true,
+            with_genres: 878,              // Science Fiction
+            sort_by: 'primary_release_date.desc'  // от новых к старым
+        });
     }
 
     function openSearch() {
