@@ -47,7 +47,7 @@
                 },
                 {
                     title: 'Фантастика',
-                    subtitle: 'Сериалы и фильмы · от новых к старым',
+                    subtitle: 'Сериалы и фильмы',
                     onSelect: openSciFi
                 }
             ],
@@ -103,9 +103,8 @@
                             source: 'tmdb',
                             page: 1,
                             card_type: true,
-                            with_genres: 10765,
-                            'first_air_date.lte': '2026-12-31',
-                            sort_by: 'first_air_date.desc',
+                            with_genres: 10765, // Sci-Fi & Fantasy
+                            sort_by: 'popularity.desc',
                             language: 'ru'
                         });
                     }
@@ -120,9 +119,8 @@
                             source: 'tmdb',
                             page: 1,
                             card_type: true,
-                            with_genres: 878,
-                            'primary_release_date.lte': '2026-12-31',
-                            sort_by: 'primary_release_date.desc',
+                            with_genres: 878, // Science Fiction
+                            sort_by: 'popularity.desc',
                             language: 'ru'
                         });
                     }
