@@ -6,6 +6,18 @@
 
     const PLUGIN_NAME = 'Познавательные';
 
+    const CHANNELS = [
+        'Discovery',
+        'National Geographic',
+        'Animal Planet',
+        'History',
+        'Viasat Explore',
+        'Viasat History',
+        'Viasat Nature',
+        'Discovery Science',
+        'Nat Geo Wild'
+    ];
+
     function init() {
         let button = $(`
             <li class="menu__item selector">
@@ -18,60 +30,32 @@
             </li>
         `);
 
-        button.on('hover:enter', openMain);
+        button.on('hover:enter', openChannels);
         $('.menu .menu__list').eq(0).append(button);
     }
 
-    function openMain() {
+    function openChannels() {
+        let items = CHANNELS.map(name => ({
+            title: name,
+            onSelect: () => searchChannel(name)
+        }));
+
         Lampa.Select.show({
             title: PLUGIN_NAME,
-            items: [
-                {
-                    title: 'Все документальные',
-                    subtitle: 'Передачи и сериалы',
-                    onSelect: () => openDocs()
-                },
-                {
-                    title: 'Поиск',
-                    subtitle: 'Найти по названию (Discovery, Viasat и т.д.)',
-                    onSelect: openSearch
-                }
-            ],
+            items: items,
             onBack: () => Lampa.Controller.toggle('content')
         });
     }
 
-    function openDocs() {
+    function searchChannel(name) {
         Lampa.Activity.push({
-            url: 'discover/tv',
-            title: 'Документальные передачи',
+            url: 'search/tv',
+            title: name,
             component: 'category_full',
             source: 'cub',
             page: 1,
-            card_type: true,
-            with_genres: 99,
-            sort_by: 'popularity.desc'
-        });
-    }
-
-    function openSearch() {
-        Lampa.Input.edit({
-            title: 'Поиск (Discovery, Nat Geo, Viasat Explore...)',
-            value: '',
-            free: true,
-            nosave: true
-        }, function (query) {
-            if (!query || query.length < 2) return;
-
-            Lampa.Activity.push({
-                url: 'search/tv',
-                title: 'Поиск: ' + query,
-                component: 'category_full',
-                source: 'cub',
-                page: 1,
-                query: query,
-                card_type: true
-            });
+            query: name,
+            card_type: true
         });
     }
 
