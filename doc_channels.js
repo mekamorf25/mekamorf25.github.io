@@ -6,6 +6,14 @@
 
     const PLUGIN_NAME = 'Познавательные';
 
+    const CHANNELS = [
+        { id: '43', name: 'National Geographic' },
+        { id: '91', name: 'Animal Planet' },
+        { id: '64', name: 'Discovery' },
+        { id: '65', name: 'History' },
+        { id: '43|91|64|65', name: 'Все каналы' }
+    ];
+
     function init() {
         let button = $(`
             <li class="menu__item selector">
@@ -18,20 +26,41 @@
             </li>
         `);
 
-        button.on('hover:enter', function () {
-            Lampa.Activity.push({
-                url: 'discover/tv',
-                title: 'Документальные передачи',
-                component: 'category_full',
-                source: 'tmdb',
-                page: 1,
-                card_type: true,
-                with_genres: 99,
-                sort_by: 'popularity.desc'
-            });
+        button.on('hover:enter', openChannels);
+        $('.menu .menu__list').eq(0).append(button);
+    }
+
+    function openChannels() {
+        let items = CHANNELS.map(function (ch) {
+            return {
+                title: ch.name,
+                onSelect: function () {
+                    openList(ch);
+                }
+            };
         });
 
-        $('.menu .menu__list').eq(0).append(button);
+        Lampa.Select.show({
+            title: PLUGIN_NAME,
+            items: items,
+            onBack: function () {
+                Lampa.Controller.toggle('content');
+            }
+        });
+    }
+
+    function openList(channel) {
+        Lampa.Activity.push({
+            url: 'discover/tv',
+            title: channel.name,
+            component: 'category_full',
+            source: 'tmdb',
+            page: 1,
+            card_type: true,
+            networks: channel.id,
+            with_genres: 99,
+            sort_by: 'popularity.desc'
+        });
     }
 
     if (window.appready) {
