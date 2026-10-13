@@ -46,8 +46,8 @@
                     onSelect: () => openType('tv')
                 },
                 {
-                    title: 'Научно-популярная фантастика',
-                    subtitle: 'От новых к старым',
+                    title: 'Фантастика',
+                    subtitle: 'Сериалы и фильмы · от новых к старым',
                     onSelect: openSciFi
                 }
             ],
@@ -62,7 +62,7 @@
         }));
 
         Lampa.Select.show({
-            title: type === 'tv' ? 'Сериалы / Передачи' : 'Фильмы',
+            title: 'Сериалы / Передачи',
             items: items,
             onBack: openMain
         });
@@ -70,15 +70,16 @@
 
     function openCatalog(type, network) {
         let params = {
-            url: type === 'tv' ? 'discover/tv' : 'discover/movie',
-            title: network.name + (type === 'tv' ? ' · Передачи' : ' · Фильмы'),
+            url: 'discover/tv',
+            title: network.name + ' · Передачи',
             component: 'category_full',
             source: 'tmdb',
             page: 1,
             card_type: true,
             networks: network.id,
             with_genres: 99,
-            sort_by: 'popularity.desc'
+            sort_by: 'popularity.desc',
+            language: 'ru'
         };
 
         if (type === 'tv') {
@@ -89,15 +90,45 @@
     }
 
     function openSciFi() {
-        Lampa.Activity.push({
-            url: 'discover/movie',
-            title: 'Научно-популярная фантастика',
-            component: 'category_full',
-            source: 'tmdb',
-            page: 1,
-            card_type: true,
-            with_genres: 878,              // Science Fiction
-            sort_by: 'primary_release_date.desc'  // от новых к старым
+        Lampa.Select.show({
+            title: 'Фантастика',
+            items: [
+                {
+                    title: 'Сериалы',
+                    onSelect: () => {
+                        Lampa.Activity.push({
+                            url: 'discover/tv',
+                            title: 'Фантастика · Сериалы',
+                            component: 'category_full',
+                            source: 'tmdb',
+                            page: 1,
+                            card_type: true,
+                            with_genres: 10765,
+                            'first_air_date.lte': '2026-12-31',
+                            sort_by: 'first_air_date.desc',
+                            language: 'ru'
+                        });
+                    }
+                },
+                {
+                    title: 'Фильмы',
+                    onSelect: () => {
+                        Lampa.Activity.push({
+                            url: 'discover/movie',
+                            title: 'Фантастика · Фильмы',
+                            component: 'category_full',
+                            source: 'tmdb',
+                            page: 1,
+                            card_type: true,
+                            with_genres: 878,
+                            'primary_release_date.lte': '2026-12-31',
+                            sort_by: 'primary_release_date.desc',
+                            language: 'ru'
+                        });
+                    }
+                }
+            ],
+            onBack: openMain
         });
     }
 
@@ -117,7 +148,8 @@
                 source: 'tmdb',
                 page: 1,
                 query: query,
-                card_type: true
+                card_type: true,
+                language: 'ru'
             });
         });
     }
