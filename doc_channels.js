@@ -6,16 +6,6 @@
 
     const PLUGIN_NAME = 'Познавательные';
 
-    const NETWORKS = [
-        { id: '43',   name: 'National Geographic' },
-        { id: '91',   name: 'Animal Planet' },
-        { id: '64',   name: 'Discovery' },
-        { id: '2087', name: 'Discovery Channel' },
-        { id: '65',   name: 'History' },
-        { id: '3186', name: 'Discovery Science' },
-        { id: '43|91|64|2087|65|3186', name: 'Все каналы' }
-    ];
-
     function init() {
         let button = $(`
             <li class="menu__item selector">
@@ -33,39 +23,33 @@
     }
 
     function openMain() {
-        let items = [
-            {
-                title: 'Поиск',
-                subtitle: 'Найти передачу по названию',
-                onSelect: openSearch
-            }
-        ];
-
-        NETWORKS.forEach(net => {
-            items.push({
-                title: net.name,
-                onSelect: () => openCatalog(net)
-            });
-        });
-
         Lampa.Select.show({
-            title: PLUGIN_NAME + ' · Передачи',
-            items: items,
+            title: PLUGIN_NAME,
+            items: [
+                {
+                    title: 'Документальные передачи',
+                    subtitle: 'Все документальные сериалы',
+                    onSelect: () => openCatalog()
+                },
+                {
+                    title: 'Поиск',
+                    subtitle: 'Найти по названию',
+                    onSelect: openSearch
+                }
+            ],
             onBack: () => Lampa.Controller.toggle('content')
         });
     }
 
-    function openCatalog(network) {
+    function openCatalog() {
         Lampa.Activity.push({
             url: 'discover/tv',
-            title: network.name + ' · Передачи',
+            title: 'Документальные передачи',
             component: 'category_full',
             source: 'cub',
             page: 1,
             card_type: true,
-            networks: network.id,
-            with_genres: 99,
-            with_type: 0,
+            with_genres: 99,          // Documentary
             sort_by: 'popularity.desc'
         });
     }
@@ -86,8 +70,7 @@
                 source: 'cub',
                 page: 1,
                 query: query,
-                card_type: true,
-                with_genres: 99
+                card_type: true
             });
         });
     }
