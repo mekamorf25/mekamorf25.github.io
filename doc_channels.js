@@ -6,16 +6,15 @@
 
     const PLUGIN_NAME = 'Познавательные';
 
-    const CHANNELS = [
-        'Discovery',
-        'National Geographic',
-        'Animal Planet',
-        'History',
-        'Viasat Explore',
-        'Viasat History',
-        'Viasat Nature',
-        'Discovery Science',
-        'Nat Geo Wild'
+    // Правильные TMDB Network ID (проверено)
+    const NETWORKS = [
+        { id: '43',   name: 'National Geographic' },
+        { id: '91',   name: 'Animal Planet' },
+        { id: '64',   name: 'Discovery' },          // основной
+        { id: '2087', name: 'Discovery Channel' },
+        { id: '65',   name: 'History' },
+        { id: '3186', name: 'Discovery Science' },
+        { id: '43|91|64|2087|65|3186', name: 'Все каналы' }
     ];
 
     function init() {
@@ -30,33 +29,53 @@
             </li>
         `);
 
-        button.on('hover:enter', openChannels);
+        button.on('hover:enter', openMain);
         $('.menu .menu__list').eq(0).append(button);
     }
 
-    function openChannels() {
-        let items = CHANNELS.map(name => ({
-            title: name,
-            onSelect: () => searchChannel(name)
-        }));
-
+    function openMain() {
         Lampa.Select.show({
             title: PLUGIN_NAME,
-            items: items,
+            items: [
+                { title: 'Сериалы / Передачи', onSelect: () => openType('tv') },
+                { title: 'Фильмы', onSelect: () => openType('movie') }
+            ],
             onBack: () => Lampa.Controller.toggle('content')
         });
     }
 
-    function searchChannel(name) {
-        Lampa.Activity.push({
-            url: 'search/tv',
-            title: name,
-            component: 'category_full',
-            source: 'cub',
-            page: 1,
-            query: name,
-            card_type: true
+    function openType(type) {
+        let items = NETWORKS.map(net => ({
+            title: net.name,
+            onSelect: () => openCatalog(type, net)
+        }));
+
+        Lampa.Select.show({
+            title: type === 'tv' ? 'Сериалы / Передачи' : 'Фильмы',
+            items: items,
+            onBack: openMain
         });
+    }
+
+    function openCatalog(type, network) {
+        let params = {
+            url: type === 'tv' ? 'discover/tv' : 'discover/movie',
+            title: network.name + (type === 'tv' ? ' · Передачи' : ' · Фильмы'),
+            component: 'category_full',
+            source: 'tmdb',
+            page: 1,
+            card_type: true,
+            networks: network.id,
+            with_genres: 99,                 // строго Documentary
+            sort_by: 'popularity.desc'
+        };
+
+        // Для сериалов дополнительно указываем тип "Documentary"
+        if (type === 'tv') {
+            params.with_type = 0;            // 0 = Documentary
+        }
+
+        Lampa.Activity.push(params);
     }
 
     if (window.appready) {
