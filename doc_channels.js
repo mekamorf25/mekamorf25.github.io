@@ -6,11 +6,10 @@
 
     const PLUGIN_NAME = 'Познавательные';
 
-    // Правильные TMDB Network ID (проверено)
     const NETWORKS = [
         { id: '43',   name: 'National Geographic' },
         { id: '91',   name: 'Animal Planet' },
-        { id: '64',   name: 'Discovery' },          // основной
+        { id: '64',   name: 'Discovery' },
         { id: '2087', name: 'Discovery Channel' },
         { id: '65',   name: 'History' },
         { id: '3186', name: 'Discovery Science' },
@@ -37,8 +36,19 @@
         Lampa.Select.show({
             title: PLUGIN_NAME,
             items: [
-                { title: 'Сериалы / Передачи', onSelect: () => openType('tv') },
-                { title: 'Фильмы', onSelect: () => openType('movie') }
+                {
+                    title: 'Поиск',
+                    subtitle: 'Найти передачу по названию',
+                    onSelect: openSearch
+                },
+                {
+                    title: 'Сериалы / Передачи',
+                    onSelect: () => openType('tv')
+                },
+                {
+                    title: 'Фильмы',
+                    onSelect: () => openType('movie')
+                }
             ],
             onBack: () => Lampa.Controller.toggle('content')
         });
@@ -66,16 +76,36 @@
             page: 1,
             card_type: true,
             networks: network.id,
-            with_genres: 99,                 // строго Documentary
+            with_genres: 99,
             sort_by: 'popularity.desc'
         };
 
-        // Для сериалов дополнительно указываем тип "Documentary"
         if (type === 'tv') {
-            params.with_type = 0;            // 0 = Documentary
+            params.with_type = 0;
         }
 
         Lampa.Activity.push(params);
+    }
+
+    function openSearch() {
+        Lampa.Input.edit({
+            title: 'Поиск передач',
+            value: '',
+            free: true,
+            nosave: true
+        }, function (query) {
+            if (!query || query.length < 2) return;
+
+            Lampa.Activity.push({
+                url: 'search/tv',
+                title: 'Поиск: ' + query,
+                component: 'category_full',
+                source: 'tmdb',
+                page: 1,
+                query: query,
+                card_type: true
+            });
+        });
     }
 
     if (window.appready) {
