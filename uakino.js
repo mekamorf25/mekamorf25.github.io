@@ -3,7 +3,8 @@
    Оригінал: https://uakino.ax/lampa.js
    Встановлення: Lampa → Налаштування → Розширення → Додати плагін → (цей файл / URL)
    Збережено: каталог UAKino, вхід в акаунт, плеєр, історія/обране.
-   Прибрано: cleanMenu, injectTheme, brandHead, fixLang, restore*, decorateCards, renderHero. */
+   Прибрано: cleanMenu, injectTheme (тема меню), brandHead, fixLang, restore*, renderHero.
+   Залишено: позначки якості (FHD/HD) і рейтинг на картках (decorateCards + badges CSS). */
 (function () {
   'use strict';
   if (window.uakino_plugin_ready) return;
@@ -1387,7 +1388,35 @@
     return parts.join(' · ');
   }
   // 12.10: малюємо бейджі поверх постера картки
-  function decorateCards() { return; // no-UI: без бейджів поверх постерів
+
+  // no-UI: лише стилі позначок якості / рейтингу / глядачів на картках (без теми меню)
+  function injectBadgesCSS() {
+    if (document.getElementById('uakino-badges-css')) return;
+    var GOLD = '#ffd700';
+    var css = [
+      '.card__vote,.card__quality,.full-start__rate>div:first-child{color:' + GOLD + '!important}',
+      '.card__view{position:relative}',
+      '.uak-q,.uak-se,.uak-live{position:absolute;z-index:6;line-height:1;border-radius:1em;font-weight:700;letter-spacing:.02em;pointer-events:none;white-space:nowrap;display:inline-flex;align-items:center}',
+      '.uak-q{bottom:.3em;left:.3em;padding:.18em .5em .22em;font-size:1.3em;background:rgba(0,0,0,.5);color:' + GOLD + '}',
+      '.card__vote{padding:.18em .5em .22em!important;line-height:1!important;display:inline-flex!important;align-items:center!important}',
+      '.uak-se{top:.45em;left:.45em;padding:.28em .5em;font-size:1.05em;font-weight:600;background:rgba(0,0,0,.66);color:#fff}',
+      '.uak-live{top:.45em;right:.45em;padding:.3em .55em;font-size:1.1em;background:rgba(214,40,40,.94);color:#fff;box-shadow:0 0 0 .12em rgba(255,255,255,.18)}',
+      '.uak-live i{font-style:normal;display:inline-block;width:.6em;height:.6em;margin-right:.35em;border-radius:50%;background:#fff;vertical-align:middle;animation:uakpulse 1.4s infinite}',
+      '@keyframes uakpulse{0%,100%{opacity:1}50%{opacity:.35}}',
+      '.uak-nw .uak-q,.uak-nw .uak-se,.uak-nw .uak-live,.uak-nw .card__vote{display:none!important}',
+      '.uak-bar{position:absolute;left:0;right:0;bottom:.4em;z-index:6;display:flex;justify-content:center;align-items:center;gap:.35em;pointer-events:none}',
+      '.uak-bar span{line-height:1;border-radius:1em;font-size:1.15em;font-weight:700;padding:.18em .5em .22em;background:rgba(0,0,0,.6);display:inline-flex;align-items:center;white-space:nowrap}',
+      '.uak-bar .b-live{background:rgba(214,40,40,.94);color:#fff}',
+      '.uak-bar .b-q,.uak-bar .b-rate{color:' + GOLD + '}',
+      '.uak-bar .b-live i{display:inline-block;width:.55em;height:.55em;margin-right:.3em;border-radius:50%;background:#fff;animation:uakpulse 1.4s infinite}'
+    ].join('\n');
+    var st = document.createElement('style');
+    st.id = 'uakino-badges-css';
+    st.textContent = css;
+    document.head.appendChild(st);
+  }
+
+  function decorateCards() {
     try {
       document.querySelectorAll('.card').forEach(function (c) {
         var d = c.card_data || c.data; if (!d || !d.uakino_id) return;
@@ -1428,10 +1457,15 @@
     } catch (e) {}
   }
   function ready() {
-    // no-UI: лише меню UAKino + налаштування акаунта, без теми/меню/мови
+    // no-UI: меню UAKino + акаунт; позначки якості/рейтингу на картках — так
     addMenu(); try { addSettings(); } catch (e) { console.log('uakino settings', e); }
-    // refreshViewers залишаємо — оновлює лічильники в меню UAKino, без декору карток
+    injectBadgesCSS();
+    decorateCards();
     refreshViewers(); setInterval(refreshViewers, 40000);
+    try {
+      if (window.MutationObserver) new MutationObserver(function () { decorateCards(); })
+        .observe(document.body, { childList: true, subtree: true });
+    } catch (e) {}
   }
   if (window.appready) ready();
   else Lampa.Listener.follow('app', function (e) { if (e.type === 'ready') ready(); });
