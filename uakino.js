@@ -1410,23 +1410,24 @@
   }
   // 12.10: малюємо бейджі поверх постера картки
 
-  // no-UI: лише стилі позначок якості / рейтингу / глядачів на картках (без теми меню)
+
+  // ── no-UI: позначки якості FHD/HD/4K (як у quality-плагінах Lampa) ──
   function injectBadgesCSS() {
     if (document.getElementById('uakino-badges-css')) return;
     var GOLD = '#ffd700';
     var css = [
-      '.card__vote,.card__quality,.full-start__rate>div:first-child{color:' + GOLD + '!important}',
-      '.card__quality{display:inline-flex!important;align-items:center;position:absolute;z-index:5;left:.3em;bottom:.3em;padding:.18em .5em .22em;line-height:1;border-radius:.3em;font-weight:700;font-size:1.15em;background:rgba(0,0,0,.55);color:' + GOLD + '!important}',
-      '.card__vote{position:absolute;z-index:5;right:.3em;bottom:.3em;padding:.18em .5em .22em!important;line-height:1!important;display:inline-flex!important;align-items:center!important;background:rgba(0,0,0,.55);border-radius:.3em;font-weight:700}',
+      /* нативний бейдж Lampa: .card__quality > div */
+      '.card__quality{position:absolute!important;z-index:6!important;left:.3em!important;bottom:.3em!important;right:auto!important;top:auto!important;padding:0!important;background:transparent!important;pointer-events:none}',
+      '.card__quality div{display:inline-block!important;padding:.18em .5em .22em!important;line-height:1!important;border-radius:.35em!important;font-weight:700!important;font-size:1.15em!important;background:rgba(0,0,0,.65)!important;color:' + GOLD + '!important;text-transform:uppercase}',
+      '.card__vote{color:' + GOLD + '!important}',
+      /* запасний бейдж плагіна */
       '.card__view{position:relative}',
-      '.uak-q,.uak-se,.uak-live{position:absolute;z-index:6;line-height:1;border-radius:1em;font-weight:700;letter-spacing:.02em;pointer-events:none;white-space:nowrap;display:inline-flex;align-items:center}',
-      '.uak-q{bottom:.3em;left:.3em;padding:.18em .5em .22em;font-size:1.3em;background:rgba(0,0,0,.5);color:' + GOLD + '}',
-      '.card__vote{padding:.18em .5em .22em!important;line-height:1!important;display:inline-flex!important;align-items:center!important}',
-      '.uak-se{top:.45em;left:.45em;padding:.28em .5em;font-size:1.05em;font-weight:600;background:rgba(0,0,0,.66);color:#fff}',
-      '.uak-live{top:.45em;right:.45em;padding:.3em .55em;font-size:1.1em;background:rgba(214,40,40,.94);color:#fff;box-shadow:0 0 0 .12em rgba(255,255,255,.18)}',
+      '.uak-q{position:absolute;z-index:6;left:.3em;bottom:.3em;padding:.18em .5em .22em;line-height:1;border-radius:.35em;font-weight:700;font-size:1.15em;background:rgba(0,0,0,.65);color:' + GOLD + ';pointer-events:none;text-transform:uppercase}',
+      '.uak-se{position:absolute;z-index:6;top:.45em;left:.45em;padding:.28em .5em;font-size:1.05em;font-weight:600;background:rgba(0,0,0,.66);color:#fff;border-radius:1em;pointer-events:none}',
+      '.uak-live{position:absolute;z-index:6;top:.45em;right:.45em;padding:.3em .55em;font-size:1.1em;background:rgba(214,40,40,.94);color:#fff;border-radius:1em;pointer-events:none;box-shadow:0 0 0 .12em rgba(255,255,255,.18)}',
       '.uak-live i{font-style:normal;display:inline-block;width:.6em;height:.6em;margin-right:.35em;border-radius:50%;background:#fff;vertical-align:middle;animation:uakpulse 1.4s infinite}',
       '@keyframes uakpulse{0%,100%{opacity:1}50%{opacity:.35}}',
-      '.uak-nw .uak-q,.uak-nw .uak-se,.uak-nw .uak-live,.uak-nw .card__vote{display:none!important}',
+      '.uak-nw .uak-q,.uak-nw .uak-se,.uak-nw .uak-live,.uak-nw .card__quality,.uak-nw .card__vote{display:none!important}',
       '.uak-bar{position:absolute;left:0;right:0;bottom:.4em;z-index:6;display:flex;justify-content:center;align-items:center;gap:.35em;pointer-events:none}',
       '.uak-bar span{line-height:1;border-radius:1em;font-size:1.15em;font-weight:700;padding:.18em .5em .22em;background:rgba(0,0,0,.6);display:inline-flex;align-items:center;white-space:nowrap}',
       '.uak-bar .b-live{background:rgba(214,40,40,.94);color:#fff}',
@@ -1439,74 +1440,160 @@
     document.head.appendChild(st);
   }
 
+  function cardDataOf(el) {
+    if (!el) return null;
+    if (el.card_data) return el.card_data;
+    if (el.data) return el.data;
+    try {
+      if (window.jQuery) {
+        var d = jQuery(el).data('data') || jQuery(el).data('card');
+        if (d) return d;
+      }
+    } catch (e) {}
+    return null;
+  }
+
+  function qualityOf(d) {
+    if (!d) return '';
+    if (d.uakino_quality) return qLabel(d.uakino_quality);
+    if (typeof d.release_quality === 'string' && d.release_quality) return qLabel(d.release_quality);
+    if (typeof d.quality === 'string' && d.quality) return qLabel(d.quality);
+    if (typeof d.quality_full === 'string' && d.quality_full) return qLabel(d.quality_full);
+    return '';
+  }
+
+  // Структура як у Lampa / quality.js: <div class="card__quality"><div>FHD</div></div>
+  function putQualityBadge(view, ql) {
+    if (!view || !ql) return;
+    var box = view.querySelector('.card__quality');
+    if (!box) {
+      box = document.createElement('div');
+      box.className = 'card__quality';
+      var inner = document.createElement('div');
+      inner.textContent = ql;
+      box.appendChild(inner);
+      // після іконок, якщо є — інакше в кінець view
+      var icons = view.querySelector('.card__icons');
+      if (icons && icons.parentNode === view) icons.insertAdjacentElement('afterend', box);
+      else view.appendChild(box);
+    } else {
+      var inn = box.querySelector('div') || box;
+      if (inn.textContent !== ql) inn.textContent = ql;
+    }
+    // дубль класом плагіна (на випадок якщо шаблон ховає .card__quality)
+    var uq = view.querySelector('.uak-q');
+    if (!uq) {
+      uq = document.createElement('div');
+      uq.className = 'uak-q';
+      uq.textContent = ql;
+      view.appendChild(uq);
+    } else if (uq.textContent !== ql) uq.textContent = ql;
+  }
+
+  function decorateOne(el, data) {
+    try {
+      var d = data || cardDataOf(el);
+      if (!d) return;
+      var view = el.querySelector ? el.querySelector('.card__view') : null;
+      if (!view && el.classList && el.classList.contains('card__view')) view = el;
+      if (!view) return;
+
+      var ql = qualityOf(d);
+
+      // «Зараз дивляться» — смуга внизу
+      if ('uakino_viewers' in d || (d.uakino_id && VIEWERS[d.uakino_id])) {
+        el.classList.add('uak-nw');
+        var nn = VIEWERS[d.uakino_id] || d.uakino_viewers || 0;
+        var rate = d.vote_average ? (Math.round(d.vote_average * 10) / 10) : 0;
+        var html = '';
+        if (nn > 0) html += '<span class="b-live"><i></i>' + nn + '</span>';
+        if (ql) html += '<span class="b-q">' + ql + '</span>';
+        if (rate) html += '<span class="b-rate">' + rate.toFixed(1) + '</span>';
+        var bar = view.querySelector('.uak-bar');
+        if (!bar) { bar = document.createElement('div'); bar.className = 'uak-bar'; view.appendChild(bar); }
+        if (bar.getAttribute('data-k') !== html) { bar.setAttribute('data-k', html); bar.innerHTML = html; }
+        return;
+      }
+
+      if (ql) putQualityBadge(view, ql);
+
+      var se = seLabel(d);
+      if (se) {
+        var e = view.querySelector('.uak-se');
+        if (!e) { e = document.createElement('div'); e.className = 'uak-se'; view.appendChild(e); }
+        if (e.textContent !== se) e.textContent = se;
+      }
+      var n = VIEWERS[d.uakino_id] || d.uakino_viewers || 0;
+      var vb = view.querySelector('.uak-live');
+      if (n > 0) {
+        if (!vb) { vb = document.createElement('div'); vb.className = 'uak-live'; view.appendChild(vb); }
+        if (vb.getAttribute('data-n') !== String(n)) { vb.setAttribute('data-n', n); vb.innerHTML = '<i></i>' + n; }
+      } else if (vb) { vb.remove(); }
+    } catch (err) {}
+  }
+
   function decorateCards() {
     try {
-      document.querySelectorAll('.card').forEach(function (c) {
-        var d = c.card_data || c.data;
-        if (!d && window.jQuery) {
-          try { d = jQuery(c).data('data') || jQuery(c).data('card') || jQuery(c).data(); } catch (e) {}
-        }
-        if (!d) return;
-        // працюємо і для UAKino, і якщо якість уже є в даних
-        var hasUak = !!(d.uakino_id || d.uakino_quality);
-        var view = c.querySelector('.card__view'); if (!view) return;
-        var ql = qLabel(d.uakino_quality || (typeof d.quality === 'string' ? d.quality : '') || d.quality_full || d.release_quality);
-        // якщо є нативний .card__quality — підставляємо текст, якщо порожній
-        if (ql) {
-          var nq = c.querySelector('.card__quality');
-          if (nq && !nq.textContent.trim()) nq.textContent = ql;
-          if (!nq) {
-            // Lampa не намалювала — додамо свій
-            nq = document.createElement('div');
-            nq.className = 'card__quality';
-            nq.textContent = ql;
-            view.appendChild(nq);
-          }
-        }
-        // 12.10: ряд «Зараз дивляться» — внизу одна стрічка: кількість / якість / оцінка
-        if ('uakino_viewers' in d) {
-          c.classList.add('uak-nw');
-          var nn = VIEWERS[d.uakino_id] || d.uakino_viewers || 0;
-          var rate = d.vote_average ? (Math.round(d.vote_average * 10) / 10) : 0;
-          var html = '';
-          if (nn > 0) html += '<span class="b-live"><i></i>' + nn + '</span>';
-          if (ql) html += '<span class="b-q">' + ql + '</span>';
-          if (rate) html += '<span class="b-rate">' + rate.toFixed(1) + '</span>';
-          var bar = view.querySelector('.uak-bar');
-          if (!bar) { bar = document.createElement('div'); bar.className = 'uak-bar'; view.appendChild(bar); }
-          if (bar.getAttribute('data-k') !== html) { bar.setAttribute('data-k', html); bar.innerHTML = html; }
-          return;
-        }
-        if (ql) {
-          var q = view.querySelector('.uak-q');
-          if (!q) { q = document.createElement('div'); q.className = 'uak-q'; view.appendChild(q); }
-          if (q.textContent !== ql) q.textContent = ql;
-        }
-        var se = seLabel(d);
-        if (se) {
-          var e = view.querySelector('.uak-se');
-          if (!e) { e = document.createElement('div'); e.className = 'uak-se'; view.appendChild(e); }
-          if (e.textContent !== se) e.textContent = se;
-        }
-        var n = VIEWERS[d.uakino_id] || d.uakino_viewers || 0;
-        var vb = view.querySelector('.uak-live');
-        if (n > 0) {
-          if (!vb) { vb = document.createElement('div'); vb.className = 'uak-live'; view.appendChild(vb); }
-          if (vb.getAttribute('data-n') !== String(n)) { vb.setAttribute('data-n', n); vb.innerHTML = '<i></i>' + n; }
-        } else if (vb) { vb.remove(); }
-      });
+      document.querySelectorAll('.card').forEach(function (c) { decorateOne(c); });
     } catch (e) {}
   }
+
+  // Головний хук: коли Lampa створює/показує картку
+  function hookCardQuality() {
+    // 1) Listener 'card' (старіші / деякі збірки)
+    try {
+      if (Lampa.Listener && Lampa.Listener.follow) {
+        Lampa.Listener.follow('card', function (e) {
+          try {
+            if (!e) return;
+            var data = e.object || e.data || e.card_data;
+            var html = e.card || e.html || e.target;
+            if (html && html.nodeType) decorateOne(html, data);
+            else if (html && html[0]) decorateOne(html[0], data);
+          } catch (err) {}
+        });
+      }
+    } catch (e) {}
+
+    // 2) Maker.Card.onVisible (як quality.js від levende / bylampa)
+    try {
+      if (Lampa.Maker && Lampa.Maker.map) {
+        var CardMaker = Lampa.Maker.map('Card');
+        if (CardMaker && CardMaker.Card && CardMaker.Card.onVisible) {
+          var orig = CardMaker.Card.onVisible;
+          CardMaker.Card.onVisible = function () {
+            try { orig.apply(this, arguments); } catch (e1) {}
+            try {
+              var data = this.data;
+              var html = this.html;
+              var el = html && (html.nodeType ? html : (html[0] || null));
+              if (el) decorateOne(el, data);
+            } catch (e2) {}
+          };
+        }
+      }
+    } catch (e) {}
+
+    // 3) запас: MutationObserver на появу .card
+    try {
+      if (window.MutationObserver) {
+        var t = null;
+        new MutationObserver(function () {
+          clearTimeout(t);
+          t = setTimeout(decorateCards, 120);
+        }).observe(document.body, { childList: true, subtree: true });
+      }
+    } catch (e) {}
+  }
+
   function ready() {
-    // no-UI: меню UAKino + акаунт; позначки якості/рейтингу на картках — так
+    // no-UI: меню UAKino + акаунт + позначки якості
     addMenu(); try { addSettings(); } catch (e) { console.log('uakino settings', e); }
+    try { Lampa.Storage.set('card_quality', true); } catch (e) {}
     injectBadgesCSS();
+    hookCardQuality();
     decorateCards();
     refreshViewers(); setInterval(refreshViewers, 40000);
-    try {
-      if (window.MutationObserver) new MutationObserver(function () { decorateCards(); })
-        .observe(document.body, { childList: true, subtree: true });
-    } catch (e) {}
   }
   if (window.appready) ready();
   else Lampa.Listener.follow('app', function (e) { if (e.type === 'ready') ready(); });
