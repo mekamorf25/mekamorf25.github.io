@@ -1067,11 +1067,11 @@
       var mine = [['Продовжити перегляд', history], ['Обране', favorites]].map(function (m) {
         return m[1]().then(function (items) {
           var ids = items.filter(function (x) { return m[0] === 'Обране' || (x.progress || 0) < 0.95; }).slice(0, 30).map(function (x) { return x.id; });
-          return ids.length ? cards(ids).then(function (d) { return { title: m[0], results: d.results }; }) : null;
+          return ids.length ? cards(ids).then(function (d) { return { title: m[0], results: enrichCards(d.results) }; }) : null;
         }).catch(function () { return null; });
       });
-      var cat = ROWS.map(function (r) { return list(r[0], 1, 20).then(function (d) { return { title: r[1], results: d.results, url: r[0], source: 'uakino', total_pages: d.total_pages }; }).catch(function () { return null; }); });
-      var live = nowWatching().then(function (d) { return (d.results && d.results.length) ? { title: 'Зараз дивляться', results: d.results, source: 'uakino' } : null; }).catch(function () { return null; });
+      var cat = ROWS.map(function (r) { return list(r[0], 1, 20).then(function (d) { return { title: r[1], results: enrichCards(d.results), url: r[0], source: 'uakino', total_pages: d.total_pages }; }).catch(function () { return null; }); });
+      var live = nowWatching().then(function (d) { return (d.results && d.results.length) ? { title: 'Зараз дивляться', results: enrichCards(d.results), source: 'uakino' } : null; }).catch(function () { return null; });
       Promise.all([live].concat(mine, cat))
         .then(function (rows) { rows = rows.filter(function (r) { return r && r.results.length; }); rows.length ? oncomplite(rows) : onerror(); })
         .catch(onerror);
@@ -1101,18 +1101,18 @@
           var all = d.movies || [], pg = params.page || 1, per = 30, tp = Math.max(1, Math.ceil(all.length / per));
           var ids = all.slice((pg - 1) * per, pg * per).map(function (x) { return x.id; });
           if (!ids.length) return oncomplite({ results: [], total_pages: tp, page: pg, source: 'uakino' });
-          return cards(ids).then(function (r) { oncomplite({ results: r.results || [], total_pages: tp, page: pg, source: 'uakino' }); });
+          return cards(ids).then(function (r) { oncomplite(enrichPayload({ results: r.results || [], total_pages: tp, page: pg, source: 'uakino' })); });
         }).catch(onerror);
       }
       list(params.url || 'new', params.page || 1, 30).then(function (d) {
-        oncomplite({ results: d.results, total_pages: d.total_pages, page: params.page || 1,
-                     total_results: d.total_results, source: 'uakino' });
+        oncomplite(enrichPayload({ results: d.results, total_pages: d.total_pages, page: params.page || 1,
+                     total_results: d.total_results, source: 'uakino' }));
       }).catch(onerror);
     },
     list: function (params, oncomplite, onerror) {
       // 14.10: нативний category_full кличе саме list(): списки акаунта й підбірки віддаємо з category_full
       if (/^(favorites|history|continue|collection:)/.test(params.url || '')) return source.category_full(params, oncomplite, onerror);
-      list(params.url || 'new', params.page || 1, 30).then(function (d) { oncomplite(d); }).catch(onerror);
+      list(params.url || 'new', params.page || 1, 30).then(function (d) { oncomplite(enrichPayload(d)); }).catch(onerror);
     },
     full: function (params, oncomplite, onerror) { tmdb().full(params, oncomplite, onerror); },
     seasons: function (tv, from, oncomplite) { tmdb().seasons(tv, from, oncomplite); },
@@ -1371,6 +1371,27 @@
     if (/hd/.test(q)) return 'HD';
     return 'SD';
   }
+  // no-UI: щоб Lampa показувала FHD/HD на картці — заповнюємо поля якості
+  function enrichCards(list) {
+    (list || []).forEach(function (r) {
+      if (!r) return;
+      var ql = qLabel(r.uakino_quality || (typeof r.quality === 'string' ? r.quality : ''));
+      if (!ql) return;
+      // рядок + об'єкт — різні шаблони Lampa читають по-різному
+      r.quality = ql;
+      r.quality_full = ql;
+      r.release_quality = ql;
+      try { var o = {}; o[ql] = true; r.qualities = o; } catch (e) {}
+    });
+    return list;
+  }
+  function enrichPayload(d) {
+    if (!d) return d;
+    if (Array.isArray(d)) return enrichCards(d);
+    if (d.results) d.results = enrichCards(d.results);
+    return d;
+  }
+
   function uakPlural(n, one, few, many) {
     n = Math.abs(n) % 100; var n1 = n % 10;
     if (n > 10 && n < 20) return many;
@@ -1395,6 +1416,8 @@
     var GOLD = '#ffd700';
     var css = [
       '.card__vote,.card__quality,.full-start__rate>div:first-child{color:' + GOLD + '!important}',
+      '.card__quality{display:inline-flex!important;align-items:center;position:absolute;z-index:5;left:.3em;bottom:.3em;padding:.18em .5em .22em;line-height:1;border-radius:.3em;font-weight:700;font-size:1.15em;background:rgba(0,0,0,.55);color:' + GOLD + '!important}',
+      '.card__vote{position:absolute;z-index:5;right:.3em;bottom:.3em;padding:.18em .5em .22em!important;line-height:1!important;display:inline-flex!important;align-items:center!important;background:rgba(0,0,0,.55);border-radius:.3em;font-weight:700}',
       '.card__view{position:relative}',
       '.uak-q,.uak-se,.uak-live{position:absolute;z-index:6;line-height:1;border-radius:1em;font-weight:700;letter-spacing:.02em;pointer-events:none;white-space:nowrap;display:inline-flex;align-items:center}',
       '.uak-q{bottom:.3em;left:.3em;padding:.18em .5em .22em;font-size:1.3em;background:rgba(0,0,0,.5);color:' + GOLD + '}',
@@ -1419,9 +1442,27 @@
   function decorateCards() {
     try {
       document.querySelectorAll('.card').forEach(function (c) {
-        var d = c.card_data || c.data; if (!d || !d.uakino_id) return;
+        var d = c.card_data || c.data;
+        if (!d && window.jQuery) {
+          try { d = jQuery(c).data('data') || jQuery(c).data('card') || jQuery(c).data(); } catch (e) {}
+        }
+        if (!d) return;
+        // працюємо і для UAKino, і якщо якість уже є в даних
+        var hasUak = !!(d.uakino_id || d.uakino_quality);
         var view = c.querySelector('.card__view'); if (!view) return;
-        var ql = qLabel(d.uakino_quality);
+        var ql = qLabel(d.uakino_quality || (typeof d.quality === 'string' ? d.quality : '') || d.quality_full || d.release_quality);
+        // якщо є нативний .card__quality — підставляємо текст, якщо порожній
+        if (ql) {
+          var nq = c.querySelector('.card__quality');
+          if (nq && !nq.textContent.trim()) nq.textContent = ql;
+          if (!nq) {
+            // Lampa не намалювала — додамо свій
+            nq = document.createElement('div');
+            nq.className = 'card__quality';
+            nq.textContent = ql;
+            view.appendChild(nq);
+          }
+        }
         // 12.10: ряд «Зараз дивляться» — внизу одна стрічка: кількість / якість / оцінка
         if ('uakino_viewers' in d) {
           c.classList.add('uak-nw');
